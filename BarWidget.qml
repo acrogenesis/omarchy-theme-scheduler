@@ -8,7 +8,7 @@ import "Schedule.js" as Schedule
 
 BarWidget {
   id: root
-  moduleName: "acrogenesis.theme-scheduler"
+  moduleName: "dkam.theme-scheduler-solar"
 
   readonly property var scheduler: bar && bar.shell
     ? bar.shell.serviceFor(root.moduleName) : null
@@ -61,12 +61,27 @@ BarWidget {
     function enable(): void { if (root.ready) root.scheduler.setEnabled(true) }
     function disable(): void { if (root.ready) root.scheduler.setEnabled(false) }
     function status(): string {
-      if (!root.ready) return "service unavailable"
-      return "enabled=" + root.scheduler.enabled
-        + " current=" + root.scheduler.currentTheme
-        + " desired=" + root.scheduler.desiredTheme
-        + " next=\"" + root.scheduler.nextSwitchText + "\""
-        + (root.scheduler.lastError ? " error=\"" + root.scheduler.lastError + "\"" : "")
+      if (!root.ready) return JSON.stringify({ available: false })
+      var service = root.scheduler
+      return JSON.stringify({
+        available: true,
+        enabled: service.enabled,
+        scheduleMode: service.scheduleMode,
+        solarActive: service.solarActive,
+        period: service.period,
+        current: service.currentTheme,
+        desired: service.desiredTheme,
+        next: service.nextSwitchText,
+        dayStart: service.dayStartText,
+        nightStart: service.nightStartText,
+        sunrise: service.sunriseText,
+        sunset: service.sunsetText,
+        latitude: service.resolvedLatitude,
+        longitude: service.resolvedLongitude,
+        locationSource: service.locationSource,
+        locationName: service.locationName,
+        error: service.lastError
+      })
     }
   }
 

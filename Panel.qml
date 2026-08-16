@@ -6,7 +6,7 @@ import "Schedule.js" as Schedule
 
 Panel {
   id: root
-  moduleName: "acrogenesis.theme-scheduler"
+  moduleName: "dkam.theme-scheduler-solar"
   manageIpc: false
 
   property var anchorItem: null
@@ -20,6 +20,29 @@ Panel {
   readonly property var timeOptions: Schedule.timeOptions(15)
   readonly property bool dropdownOpen: dayThemePicker.popupOpen
     || nightThemePicker.popupOpen || dayTimePicker.popupOpen || nightTimePicker.popupOpen
+  readonly property bool solarMode: root.service && root.service.scheduleMode === "solar"
+  // An inherited location is the common case and needs no controls, so the
+  // coordinate fields stay folded away until asked for. Typing coordinates
+  // makes the source "manual", which keeps them open on their own.
+  property bool overrideLocation: false
+  readonly property bool inheritingNow: root.service !== null
+    && (root.service.locationSource === "weather"
+      || root.service.locationSource === "timezone")
+  readonly property bool locationInheritable:
+    root.service !== null && root.service.locationInheritable
+  readonly property bool coordinatesVisible: !root.inheritingNow || root.overrideLocation
+  // PanelKeyCatcher sees keys before its children, so while a coordinate field
+  // has focus its shortcuts have to stand down or "a" applies the theme instead
+  // of typing.
+  readonly property bool editingText: latitudeField.activeFocus || longitudeField.activeFocus
+
+  function coordinateText(value) {
+    return value === null || value === undefined ? "" : String(value)
+  }
+
+  function inheritedText(value, example) {
+    return value === null || value === undefined ? example : String(value)
+  }
 
   function open() {
     if (service) {
@@ -51,7 +74,7 @@ Panel {
     PanelKeyCatcher {
       id: keyCatcher
       anchors.fill: parent
-      blocked: root.dropdownOpen
+      blocked: root.dropdownOpen || root.editingText
       onCloseRequested: root.close()
       onTabRequested: function(direction) { root.switchPanel(direction) }
       onTextKey: function(text) {
@@ -95,12 +118,216 @@ Panel {
           Toggle {
             width: parent.width
             label: "Automatic switching"
-            description: "Use local time and catch up after sleep or restart."
+            description: root.solarMode
+              ? "Follow the sun and catch up after sleep or restart."
+              : "Use local time and catch up after sleep or restart."
             checked: root.service ? root.service.enabled : false
             foreground: root.foreground
             fontFamily: root.fontFamily
             enabled: root.service !== null
             onClicked: if (root.service) root.service.setEnabled(!root.service.enabled)
+          }
+
+          PanelSeparator { width: parent.width; foreground: root.foreground }
+
+          PanelSectionHeader {
+            text: "SCHEDULE"
+            foreground: root.foreground
+            fontFamily: root.fontFamily
+          }
+
+          ButtonGroup {
+            width: parent.width
+            value: root.solarMode ? "solar" : "fixed"
+            options: [
+              { value: "fixed", label: "Fixed times" },
+              { value: "solar", label: "Sunrise & sunset" }
+            ]
+            foreground: root.foreground
+            fontFamily: root.fontFamily
+            focusable: false
+            onChanged: function(value) {
+              if (root.service) root.service.updateSchedule({ scheduleMode: value })
+            }
+          }
+
+          Column {
+            width: parent.width
+            spacing: Style.space(8)
+            visible: root.solarMode
+
+            // Where the sun is being computed for, and the only control most
+            // people need: none. Omarchy already knows roughly where this
+            // machine is, so the coordinate fields stay folded away.
+            Row {
+              width: parent.width
+              spacing: Style.space(10)
+
+              Text {
+                anchors.verticalCenter: parent.verticalCenter
+                width: parent.width
+                  - (overrideButton.visible ? overrideButton.width + parent.spacing : 0)
+                text: root.service ? root.service.locationSummary : ""
+                textFormat: Text.PlainText
+                color: root.foreground
+                font.family: root.fontFamily
+                font.pixelSize: Style.font.bodySmall
+                wrapMode: Text.WordWrap
+              }
+
+              Button {
+                id: overrideButton
+                anchors.verticalCenter: parent.verticalCenter
+                visible: root.locationInheritable
+                text: root.coordinatesVisible ? "Use inherited" : "Set manually"
+                tooltipText: root.service && !root.coordinatesVisible
+                  ? "Enter coordinates instead of " + root.service.inheritedSummary : ""
+                fontSize: Style.font.caption
+                focusable: true
+                foreground: root.foreground
+                fontFamily: root.fontFamily
+                onClicked: {
+                  if (!root.coordinatesVisible) {
+                    root.overrideLocation = true
+                    return
+                  }
+                  root.overrideLocation = false
+                  // Clearing the typed coordinates is what actually restores
+                  // the inherited location; collapsing the fields alone would
+                  // leave manual values silently in force.
+                  if (root.service && root.service.locationSource === "manual")
+                    root.service.updateSchedule({ latitude: null, longitude: null })
+                }
+              }
+            }
+
+            Row {
+              width: parent.width
+              spacing: Style.space(10)
+              visible: root.coordinatesVisible
+
+              Column {
+                width: (parent.width - parent.spacing) / 2
+                spacing: Style.space(4)
+
+                Text {
+                  text: "Latitude"
+                  textFormat: Text.PlainText
+                  color: root.dim
+                  font.family: root.fontFamily
+                  font.pixelSize: Style.font.caption
+                }
+
+                TextField {
+                  id: latitudeField
+                  width: parent.width
+                  // An empty field inherits, so the placeholder shows what it
+                  // is inheriting rather than an example from somewhere else.
+                  placeholderText: root.inheritedText(
+                    root.service ? root.service.resolvedLatitude : null, "-37.8136")
+                  foreground: root.foreground
+                  font.family: root.fontFamily
+                  readonly property string committed:
+                    root.service ? root.coordinateText(root.service.latitude) : ""
+                  onCommittedChanged: if (!activeFocus) text = committed
+                  Component.onCompleted: text = committed
+                  onEditingFinished: {
+                    if (root.service && text !== committed)
+                      root.service.updateSchedule({ latitude: text })
+                  }
+                }
+              }
+
+              Column {
+                width: (parent.width - parent.spacing) / 2
+                spacing: Style.space(4)
+
+                Text {
+                  text: "Longitude"
+                  textFormat: Text.PlainText
+                  color: root.dim
+                  font.family: root.fontFamily
+                  font.pixelSize: Style.font.caption
+                }
+
+                TextField {
+                  id: longitudeField
+                  width: parent.width
+                  placeholderText: root.inheritedText(
+                    root.service ? root.service.resolvedLongitude : null, "144.9631")
+                  foreground: root.foreground
+                  font.family: root.fontFamily
+                  readonly property string committed:
+                    root.service ? root.coordinateText(root.service.longitude) : ""
+                  onCommittedChanged: if (!activeFocus) text = committed
+                  Component.onCompleted: text = committed
+                  onEditingFinished: {
+                    if (root.service && text !== committed)
+                      root.service.updateSchedule({ longitude: text })
+                  }
+                }
+              }
+            }
+
+            // Today's computed times, so a wrong coordinate is obvious at a
+            // glance against any almanac.
+            Text {
+              width: parent.width
+              visible: root.service && root.service.solarAvailable
+              text: root.service
+                ? "Sunrise " + root.service.sunriseText + " · Sunset " + root.service.sunsetText
+                  + (root.service.solarActive && (root.service.dayOffset || root.service.nightOffset)
+                    ? "  →  switches " + root.service.dayStartText
+                      + " · " + root.service.nightStartText : "")
+                : ""
+              textFormat: Text.PlainText
+              color: root.foreground
+              font.family: root.fontFamily
+              font.pixelSize: Style.font.bodySmall
+              wrapMode: Text.WordWrap
+            }
+
+            Text {
+              width: parent.width
+              visible: root.service && root.service.solarNotice !== ""
+              text: root.service ? root.service.solarNotice : ""
+              textFormat: Text.PlainText
+              color: root.urgent
+              font.family: root.fontFamily
+              font.pixelSize: Style.font.caption
+              wrapMode: Text.WordWrap
+            }
+
+            Row {
+              width: parent.width
+              spacing: Style.space(10)
+
+              NumberField {
+                label: "Sunrise offset"
+                value: root.service ? root.service.dayOffset : 0
+                from: -120
+                to: 120
+                stepSize: 15
+                foreground: root.foreground
+                fontFamily: root.fontFamily
+                onModified: function(value) {
+                  if (root.service) root.service.updateSchedule({ dayOffset: value })
+                }
+              }
+
+              NumberField {
+                label: "Sunset offset"
+                value: root.service ? root.service.nightOffset : 0
+                from: -120
+                to: 120
+                stepSize: 15
+                foreground: root.foreground
+                fontFamily: root.fontFamily
+                onModified: function(value) {
+                  if (root.service) root.service.updateSchedule({ nightOffset: value })
+                }
+              }
+            }
           }
 
           PanelSeparator { width: parent.width; foreground: root.foreground }
@@ -117,7 +344,8 @@ Panel {
 
             SearchableDropdown {
               id: dayThemePicker
-              width: parent.width - dayTimePicker.width - parent.spacing
+              width: parent.width
+                - (dayTimePicker.visible ? dayTimePicker.width + parent.spacing : 0)
               label: "Theme"
               value: root.service ? root.service.dayTheme : ""
               options: root.service ? root.service.dayThemeOptions : []
@@ -129,6 +357,7 @@ Panel {
 
             Dropdown {
               id: dayTimePicker
+              visible: !root.solarMode
               width: Style.space(110)
               label: "Starts"
               value: root.service ? String(root.service.dayStart) : "420"
@@ -151,7 +380,8 @@ Panel {
 
             SearchableDropdown {
               id: nightThemePicker
-              width: parent.width - nightTimePicker.width - parent.spacing
+              width: parent.width
+                - (nightTimePicker.visible ? nightTimePicker.width + parent.spacing : 0)
               label: "Theme"
               value: root.service ? root.service.nightTheme : ""
               options: root.service ? root.service.nightThemeOptions : []
@@ -163,6 +393,7 @@ Panel {
 
             Dropdown {
               id: nightTimePicker
+              visible: !root.solarMode
               width: Style.space(110)
               label: "Starts"
               value: root.service ? String(root.service.nightStart) : "1140"
