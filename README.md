@@ -9,6 +9,8 @@ solar scheduling.
 
 [upstream]: https://github.com/acrogenesis/omarchy-theme-scheduler
 
+![The Theme Scheduler panel set to sunrise and sunset, showing the location picked up from the system timezone and today's computed sun times](preview.png)
+
 ## Features
 
 - Independent day and night themes
