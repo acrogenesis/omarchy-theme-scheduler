@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
-  "id": "dkam.theme-scheduler-solar",
-  "name": "Theme Scheduler (Solar)",
+  "id": "acrogenesis.theme-scheduler",
+  "name": "Theme Scheduler",
   "version": "0.3.0",
-  "author": "dkam",
+  "author": "acrogenesis",
   "license": "MIT",
   "description": "Automatically switch between light and dark Omarchy themes at sunrise and sunset, or at fixed times.",
   "kinds": [
@@ -15,7 +15,7 @@
     "barWidget": "BarWidget.qml"
   },
   "barWidget": {
-    "displayName": "Theme Scheduler (Solar)",
+    "displayName": "Theme Scheduler",
     "description": "Switch light and dark themes at sunrise and sunset, or at times you set.",
     "category": "System",
     "allowMultiple": false,

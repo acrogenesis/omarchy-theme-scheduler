@@ -21,3 +21,5 @@ jobs:
         run: node tests/test_schedule.js
       - name: Test theme catalog
         run: bash tests/test_theme_catalog.sh
+      - name: Test timezone location
+        run: bash tests/test_timezone_location.sh

@@ -8,7 +8,7 @@ import "Schedule.js" as Schedule
 
 BarWidget {
   id: root
-  moduleName: "dkam.theme-scheduler-solar"
+  moduleName: "acrogenesis.theme-scheduler"
 
   readonly property var scheduler: bar && bar.shell
     ? bar.shell.serviceFor(root.moduleName) : null
@@ -61,27 +61,20 @@ BarWidget {
     function enable(): void { if (root.ready) root.scheduler.setEnabled(true) }
     function disable(): void { if (root.ready) root.scheduler.setEnabled(false) }
     function status(): string {
-      if (!root.ready) return JSON.stringify({ available: false })
+      if (!root.ready) return "service unavailable"
       var service = root.scheduler
-      return JSON.stringify({
-        available: true,
-        enabled: service.enabled,
-        scheduleMode: service.scheduleMode,
-        solarActive: service.solarActive,
-        period: service.period,
-        current: service.currentTheme,
-        desired: service.desiredTheme,
-        next: service.nextSwitchText,
-        dayStart: service.dayStartText,
-        nightStart: service.nightStartText,
-        sunrise: service.sunriseText,
-        sunset: service.sunsetText,
-        latitude: service.resolvedLatitude,
-        longitude: service.resolvedLongitude,
-        locationSource: service.locationSource,
-        locationName: service.locationName,
-        error: service.lastError
-      })
+      return "enabled=" + service.enabled
+        + " current=" + service.currentTheme
+        + " desired=" + service.desiredTheme
+        + " next=\"" + service.nextSwitchText + "\""
+        + " mode=" + service.scheduleMode
+        + " period=" + service.period
+        + (service.scheduleMode === "solar"
+          ? " sunrise=" + service.sunriseText
+            + " sunset=" + service.sunsetText
+            + " location=\"" + service.locationSummary + "\""
+          : "")
+        + (service.lastError ? " error=\"" + service.lastError + "\"" : "")
     }
   }
 

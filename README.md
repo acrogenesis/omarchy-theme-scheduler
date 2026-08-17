@@ -4,11 +4,6 @@ Automatically switch between a light and dark Omarchy theme at sunrise and
 sunset, or at times you set. The plugin runs inside Omarchy Shell, catches up
 after sleep or restart, and does not require root access or systemd units.
 
-This is a fork of [acrogenesis/omarchy-theme-scheduler][upstream] that adds
-solar scheduling.
-
-[upstream]: https://github.com/acrogenesis/omarchy-theme-scheduler
-
 ![The Theme Scheduler panel set to sunrise and sunset, showing the location picked up from the system timezone and today's computed sun times](preview.png)
 
 ## Features
@@ -21,12 +16,12 @@ solar scheduling.
 - Resume/restart catch-up
 - Manual theme overrides remain until the next scheduled boundary
 - Bar panel, middle-click “apply now,” and shell IPC controls
-- Configuration stored at `~/.config/omarchy/theme-scheduler-solar/config.json`
+- Configuration stored at `~/.config/omarchy/theme-scheduler/config.json`
 
 ## Install
 
 ```bash
-omarchy plugin add https://github.com/dkam/omarchy-theme-scheduler.git --enable
+omarchy plugin add https://github.com/acrogenesis/omarchy-theme-scheduler.git --enable
 ```
 
 The plugin is safe on first install: its internal automation toggle defaults
@@ -41,28 +36,28 @@ automatic switching.
 ## Remove
 
 ```bash
-omarchy plugin remove dkam.theme-scheduler-solar
+omarchy plugin remove acrogenesis.theme-scheduler
 ```
 
 Removing the plugin leaves its settings at
-`~/.config/omarchy/theme-scheduler-solar/config.json` so a later reinstall can reuse
+`~/.config/omarchy/theme-scheduler/config.json` so a later reinstall can reuse
 them. Delete that file separately only if you also want to discard the saved
 schedule and theme choices.
 
 For local development:
 
 ```bash
-ln -sfn "$PWD" ~/.config/omarchy/plugins/dkam.theme-scheduler-solar
-omarchy plugin enable dkam.theme-scheduler-solar --section right
+ln -sfn "$PWD" ~/.config/omarchy/plugins/acrogenesis.theme-scheduler
+omarchy plugin enable acrogenesis.theme-scheduler --section right
 ```
 
 ## Commands
 
 ```bash
-omarchy-shell dkam.theme-scheduler-solar status
-omarchy-shell dkam.theme-scheduler-solar enable
-omarchy-shell dkam.theme-scheduler-solar disable
-omarchy-shell dkam.theme-scheduler-solar applyNow
+omarchy-shell acrogenesis.theme-scheduler status
+omarchy-shell acrogenesis.theme-scheduler enable
+omarchy-shell acrogenesis.theme-scheduler disable
+omarchy-shell acrogenesis.theme-scheduler applyNow
 ```
 
 ## How scheduling behaves
@@ -80,8 +75,8 @@ Each picker lists its matching mode first, the opposite mode second, and any
 unclassified themes last; themes within every group are alphabetical.
 
 The service evaluates the wall clock every minute. If the computer sleeps
-through a boundary or Omarchy Shell starts later, it applies the theme for the
-current period when it resumes.
+through a boundary or Omarchy Shell starts later, it applies the theme for
+the current period when it resumes.
 
 ## Solar scheduling
 
@@ -134,6 +129,7 @@ sunrise and sunset fall either side of local midnight.
 ```bash
 node tests/test_schedule.js
 bash tests/test_theme_catalog.sh
+bash tests/test_timezone_location.sh
 omarchy plugin validate .
 qmllint -I /usr/share/omarchy/shell ./*.qml
 ```

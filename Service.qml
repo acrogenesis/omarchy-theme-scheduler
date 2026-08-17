@@ -7,10 +7,7 @@ Item {
   id: root
 
   readonly property string home: Quickshell.env("HOME")
-  // Namespaced away from upstream's theme-scheduler directory: if both plugins
-  // are installed they would otherwise share lastHandledBoundary and each undo
-  // the other's catch-up.
-  readonly property string configDir: home + "/.config/omarchy/theme-scheduler-solar"
+  readonly property string configDir: home + "/.config/omarchy/theme-scheduler"
   readonly property string configPath: configDir + "/config.json"
   readonly property string currentThemePath: home + "/.local/state/omarchy/current/theme.name"
   // Omarchy's shared location, owned by omarchy-weather-location. Read-only

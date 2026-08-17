@@ -6,7 +6,7 @@ import "Schedule.js" as Schedule
 
 Panel {
   id: root
-  moduleName: "dkam.theme-scheduler-solar"
+  moduleName: "acrogenesis.theme-scheduler"
   manageIpc: false
 
   property var anchorItem: null
