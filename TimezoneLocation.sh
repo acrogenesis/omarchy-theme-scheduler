@@ -59,12 +59,20 @@ lookup() {
 lookup "$zone" && exit 0
 
 # Renamed zones such as Australia/Canberra and US/Eastern are absent from both
-# tables. tzdata hard-links them to the zone that replaced them, so the sibling
-# that does appear in a table is the modern name for the same place. Zones with
-# no geography at all, like UTC, correctly resolve to nothing and still exit 0:
-# that empty answer is success, not a script failure.
+# tables. Debian and Ubuntu store them as symlinks; tzdata on Arch often uses
+# hard links. Follow either to the sibling that does appear in a table. Zones
+# with no geography at all, like UTC, correctly resolve to nothing and still
+# exit 0: that empty answer is success, not a script failure.
+zone_file="$zoneinfo/$zone"
+if [[ -L $zone_file ]]; then
+  target=$(readlink -f "$zone_file" 2>/dev/null)
+  if [[ -n $target && $target == "$zoneinfo"/* ]]; then
+    lookup "${target#"$zoneinfo"/}" && exit 0
+  fi
+fi
+
 while IFS= read -r sibling; do
   lookup "${sibling#"$zoneinfo"/}" && exit 0
-done < <(find "$zoneinfo" -samefile "$zoneinfo/$zone" 2>/dev/null)
+done < <(find "$zoneinfo" -samefile "$zone_file" 2>/dev/null)
 
 exit 0
